@@ -9,7 +9,16 @@ const {errorHandler} = require('../utility')
 
 // fetch all the courses
 router.get('/', asyncHandler(async (req, res) => {
-    let courses = await Course.findAll();
+    let courses = await Course.findAll({
+        attributes: [
+            'id',
+            'title',
+            'description',
+            'estimatedTime',
+            'materialsNeeded',
+            'userId'
+        ]
+    });
     res.status(200).json(courses);
 }));
 
@@ -20,6 +29,14 @@ router.get('/:id', asyncHandler(async (req, res) => {
     try {
         if (course) {
             Course.findAll({
+                attributes: [
+                    'id',
+                    'title',
+                    'description',
+                    'estimatedTime',
+                    'materialsNeeded',
+                    'userId'
+                ],
                 where: {
                     id: courseId
                 }
@@ -48,15 +65,20 @@ router.post('/', authenticateUser, asyncHandler(async (req, res) => {
 // updates the course with authentication
 router.put('/:id', authenticateUser, asyncHandler(async (req, res) => {
     let courseId = req.params.id
+    const user = req.currentUser;
     const course = await Course.findByPk(courseId);
     try {
         if (course) {
-            await Course.update(req.body, {
-                where: {
-                    id: courseId
-                }
-            });
-            res.status(204).end();
+            if (user.id == course.userId) {
+                await Course.update(req.body, {
+                    where: {
+                        id: courseId
+                    }
+                });
+                res.status(204).end();
+            } else 
+                res.status(403).end();
+            
         } else {
             res.status(400).end()
         }
@@ -68,15 +90,20 @@ router.put('/:id', authenticateUser, asyncHandler(async (req, res) => {
 // deletes a course with authentication
 router.delete('/:id', authenticateUser, asyncHandler(async (req, res) => {
     let courseId = req.params.id
+    const user = req.currentUser;
     const course = await Course.findByPk(courseId);
     try {
         if (course) {
-            await Course.destroy({
-                where: {
-                    id: courseId
-                }
-            });
-            res.status(204).end()
+            if (user.id == course.userId) {
+                await Course.destroy({
+                    where: {
+                        id: courseId
+                    }
+                });
+                res.status(204).end()
+            } else 
+                res.status(403).end();
+            
         } else {
             res.status(400).end()
         }
