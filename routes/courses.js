@@ -3,6 +3,7 @@
 const express = require('express');
 const router = express.Router();
 const Course = require('../models').Course;
+const User = require('../models').User;
 const {authenticateUser} = require('../middleware/authUser');
 const {asyncHandler} = require('../utility')
 const {errorHandler} = require('../utility')
@@ -17,6 +18,12 @@ router.get('/', asyncHandler(async (req, res) => {
             'estimatedTime',
             'materialsNeeded',
             'userId'
+        ],
+        include: [
+            {
+                model: User,
+                attributes: ["id", "firstName", "lastName", "emailAddress"]
+            },
         ]
     });
     res.status(200).json(courses);
@@ -28,7 +35,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
     const course = await Course.findByPk(courseId);
     try {
         if (course) {
-            Course.findAll({
+            const result = await Course.findAll({
                 attributes: [
                     'id',
                     'title',
@@ -39,9 +46,16 @@ router.get('/:id', asyncHandler(async (req, res) => {
                 ],
                 where: {
                     id: courseId
-                }
+                },
+                include: [
+                    {
+                        model: User,
+                        attributes: ["id", "firstName", "lastName", "emailAddress"]
+                    },
+                ]
+
             });
-            res.status(200).json(course);
+            res.status(200).json(result);
         } else {
             res.status(400).end()
         }
@@ -79,6 +93,7 @@ router.put('/:id', authenticateUser, asyncHandler(async (req, res) => {
             } else 
                 res.status(403).end();
             
+
         } else {
             res.status(400).end()
         }
@@ -103,7 +118,6 @@ router.delete('/:id', authenticateUser, asyncHandler(async (req, res) => {
                 res.status(204).end()
             } else 
                 res.status(403).end();
-            
         } else {
             res.status(400).end()
         }
